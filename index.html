@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Refractive Chromatic Prism Navbar - Ready-UIs #12</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            prism: {
+              void: '#07070b',
+              surface: '#0f111a',
+              light: '#f8f9fc',
+              border: '#1f2438',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 3D Perspective Scene */
+    .perspective-container {
+      perspective: 1200px;
+    }
+
+    /* Chromatic Dispersion Border */
+    .prism-border {
+      position: relative;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      transition: transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 300ms ease;
+    }
+
+    .prism-border::before {
+      content: '';
+      position: absolute;
+      inset: -1.5px;
+      border-radius: inherit;
+      padding: 1.5px;
+      background: conic-gradient(
+        from var(--angle, 0deg),
+        #ff0055, #ff7700, #ffdd00, #00ff88, #00ccff, #7700ff, #ff00aa, #ff0055
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: var(--border-opacity, 0.65);
+      transition: opacity 300ms ease;
+    }
+
+    .dark .prism-border {
+      background: rgba(15, 17, 26, 0.75);
+      box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    html:not(.dark) .prism-border {
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    }
+
+    /* Sliding Active Pill */
+    #tabPill {
+      transition: transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1), width 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Ambient Iridescent Background Mesh */
+    .rainbow-mesh {
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(255, 0, 128, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 80% 40%, rgba(0, 204, 255, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(120, 0, 255, 0.15) 0%, transparent 45%);
+    }
+    html:not(.dark) .rainbow-mesh {
+      background: 
+        radial-gradient(circle at 20% 30%, rgba(255, 0, 128, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 80% 40%, rgba(0, 204, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 80%, rgba(120, 0, 255, 0.08) 0%, transparent 45%);
+    }
+
+    /* Mobile Sheet Drawer */
+    #mobileSidebar {
+      transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #mobileBackdrop {
+      transition: opacity 300ms ease;
+    }
+  </style>
+</head>
+<body class="bg-prism-void dark:bg-prism-void text-slate-100 min-h-screen flex flex-col justify-between p-4 md:p-8 transition-colors duration-300 font-sans rainbow-mesh selection:bg-fuchsia-500 selection:text-white">
+
+  <!-- TOP HEADER (STRICT SINGLE ROW, CENTERED) -->
+  <header class="w-full max-w-[800px] mx-auto flex items-center justify-between gap-3 text-xs md:text-sm py-2 px-1">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-fuchsia-500 via-cyan-400 to-amber-300 p-[1.5px] shrink-0">
+        <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-bold text-white text-xs">
+          ✦
+        </div>
+      </div>
+      <div class="flex items-center gap-2 overflow-hidden whitespace-nowrap">
+        <span class="font-bold tracking-tight text-white dark:text-white whitespace-nowrap">Bahaa Mohammed</span>
+        <span class="text-slate-500">•</span>
+        <span class="text-slate-400 text-xs hidden sm:inline whitespace-nowrap">Chromatic Prism Glass</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 shrink-0">
+      <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-cyan-300 whitespace-nowrap">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span>Ready-UIs #12</span>
+      </span>
+      <!-- Dark / Light Mode Button -->
+      <button id="themeToggleBtn" aria-label="Toggle Theme" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 flex items-center justify-center text-slate-300 active:scale-95 transition-all duration-150">
+        <svg id="sunIcon" class="w-4 h-4 hidden dark:block text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <circle cx="12" cy="12" r="5" stroke-width="2"/>
+          <path stroke-width="2" stroke-linecap="round" d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+        </svg>
+        <svg id="moonIcon" class="w-4 h-4 block dark:hidden text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CANVAS (CENTERED HERO & NAVBAR) -->
+  <main class="w-full max-w-[800px] mx-auto my-auto flex flex-col items-center justify-center py-6 md:py-10 perspective-container">
+
+    <!-- DESKTOP NAVBAR CONTAINER WITH 3D TILT & CHROMATIC DISPERSION -->
+    <nav id="prismNavbar" class="hidden md:flex w-full items-center justify-between p-2.5 rounded-2xl prism-border relative select-none">
+      
+      <!-- Brand Pill -->
+      <a href="#" class="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-sm tracking-tight transition-all duration-150">
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 via-cyan-300 to-amber-200">
+          PRISM
+        </span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/10 font-mono text-slate-300">v1.2</span>
+      </a>
+
+      <!-- Center Tabs with Magnetic Sliding Pill -->
+      <div id="tabContainer" class="relative flex items-center p-1 rounded-xl bg-black/30 border border-white/5">
+        <!-- Floating Active Pill -->
+        <div id="tabPill" class="absolute top-1 bottom-1 rounded-lg bg-gradient-to-r from-fuchsia-500/20 via-cyan-500/20 to-purple-500/20 border border-white/20 shadow-[0_0_15px_rgba(0,200,255,0.3)] pointer-events-none"></div>
+
+        <button data-tab="refraction" class="prism-tab-btn relative z-10 px-4 py-1.5 text-xs font-semibold rounded-lg text-cyan-300 transition-colors">
+          Refraction
+        </button>
+        <button data-tab="dispersion" class="prism-tab-btn relative z-10 px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-colors">
+          Dispersion
+        </button>
+        <button data-tab="spectrum" class="prism-tab-btn relative z-10 px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-colors">
+          Spectrum
+        </button>
+        <button data-tab="hologram" class="prism-tab-btn relative z-10 px-4 py-1.5 text-xs font-semibold rounded-lg text-slate-400 hover:text-white transition-colors">
+          Hologram
+        </button>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2.5">
+        <!-- Spectrum Tuner Dropdown Trigger -->
+        <button id="spectrumPanelToggle" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-cyan-300 flex items-center gap-1.5 active:scale-95 transition-all">
+          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>Tuner</span>
+        </button>
+
+        <!-- Connect Copy Button -->
+        <button id="copyEmailBtn" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500/80 via-purple-500/80 to-cyan-500/80 hover:brightness-110 text-xs font-bold text-white flex items-center gap-1.5 active:scale-95 transition-all shadow-[0_0_15px_rgba(255,0,128,0.3)]">
+          <svg id="copyIcon" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+          </svg>
+          <svg id="checkIcon" class="w-3.5 h-3.5 text-emerald-400 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+          </svg>
+          <span id="copyBtnText">Connect</span>
+        </button>
+      </div>
+
+      <!-- Spectrum Tuner Popover Card -->
+      <div id="spectrumPopover" class="hidden absolute right-0 top-full mt-3 w-72 p-4 rounded-2xl prism-border bg-slate-900/90 z-30 transition-all origin-top-right">
+        <div class="flex items-center justify-between pb-2 mb-3 border-b border-white/10">
+          <span class="text-xs font-bold text-white">Dispersion Tuner</span>
+          <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">Active</span>
+        </div>
+        
+        <div class="space-y-3 text-xs">
+          <div>
+            <div class="flex justify-between text-slate-400 mb-1">
+              <span>Wavelength Spread</span>
+              <span id="waveVal" class="font-mono text-cyan-300">650nm</span>
+            </div>
+            <input type="range" id="waveSlider" min="380" max="750" value="650" class="w-full accent-cyan-400 cursor-pointer">
+          </div>
+
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-slate-400">Border Refraction</span>
+            <span class="font-mono text-xs text-fuchsia-400">n = 1.52 (Crown Glass)</span>
+          </div>
+
+          <div class="h-2 rounded-full w-full bg-gradient-to-r from-red-500 via-green-400 to-blue-500 opacity-80"></div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MOBILE NAVBAR BAR (CENTERED, CLEAN) -->
+    <div class="flex md:hidden w-full items-center justify-between p-3 rounded-2xl prism-border">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-fuchsia-500 to-cyan-400 p-[1.5px]">
+          <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-bold text-white text-xs">
+            ✦
+          </div>
+        </div>
+        <span class="font-bold text-sm text-white whitespace-nowrap">Prism Glass</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="mobileCopyBtn" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-xs font-bold text-white active:scale-95 transition-transform whitespace-nowrap">
+          Connect
+        </button>
+        <button id="mobileMenuOpenBtn" class="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-200 active:scale-95 transition-transform" aria-label="Open Menu">
+          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- HERO DISPLAY CARD (SHOWCASE PRISM REFRACTION) -->
+    <div class="w-full mt-8 p-6 md:p-8 rounded-3xl prism-border flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="space-y-3 text-center md:text-left">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-cyan-300">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          <span>Optical Dispersion Matrix</span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+          Refractive Chromatic Prism
+        </h1>
+        <p class="text-xs md:text-sm text-slate-300 max-w-md leading-relaxed">
+          Refracting white light into iridescent spectral frequencies. Real-time border dispersion tracking cursor angle with 3D crystal perspective physics.
+        </p>
+      </div>
+
+      <!-- Interactive Spectrum Card -->
+      <div class="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2 w-full md:w-56 shrink-0">
+        <div class="flex justify-between text-[11px] font-mono text-slate-400">
+          <span>SPECTRUM</span>
+          <span class="text-cyan-400">400-700nm</span>
+        </div>
+        <div class="h-8 rounded-xl bg-gradient-to-r from-fuchsia-500 via-cyan-400 to-amber-300 opacity-90 shadow-[0_0_15px_rgba(0,204,255,0.4)]"></div>
+        <div class="text-[10px] text-slate-400 text-center font-mono">
+          Crown Glass Crystal Matrix
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- MOBILE SLIDE-IN SIDEBAR SHEET & BACKDROP -->
+  <div id="mobileBackdrop" class="fixed inset-0 bg-black/70 backdrop-blur-md z-40 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+
+  <aside id="mobileSidebar" class="fixed top-0 right-0 bottom-0 w-[290px] max-w-[85vw] bg-slate-950/95 border-l border-white/10 z-50 p-6 flex flex-col justify-between translate-x-full shadow-2xl overflow-y-auto">
+    <div class="space-y-6">
+      <!-- Mobile Sheet Header -->
+      <div class="flex items-center justify-between pb-4 border-b border-white/10">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-fuchsia-500 to-cyan-400 p-[1.5px]">
+            <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-bold text-white text-xs">
+              ✦
+            </div>
+          </div>
+          <span class="font-bold text-sm text-white whitespace-nowrap">Prism Glass</span>
+        </div>
+        <button id="mobileMenuCloseBtn" class="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 active:scale-95 transition-transform" aria-label="Close Menu">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Mobile Navigation Links -->
+      <div class="space-y-2">
+        <button class="mobile-tab-btn w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-500/20 to-cyan-500/20 border border-white/20 text-left text-xs font-bold text-cyan-300 flex items-center justify-between">
+          <span>Refraction</span>
+          <span>→</span>
+        </button>
+        <button class="mobile-tab-btn w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-left text-xs font-semibold text-slate-300 hover:text-white flex items-center justify-between">
+          <span>Dispersion</span>
+          <span>→</span>
+        </button>
+        <button class="mobile-tab-btn w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-left text-xs font-semibold text-slate-300 hover:text-white flex items-center justify-between">
+          <span>Spectrum</span>
+          <span>→</span>
+        </button>
+        <button class="mobile-tab-btn w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-left text-xs font-semibold text-slate-300 hover:text-white flex items-center justify-between">
+          <span>Hologram</span>
+          <span>→</span>
+        </button>
+      </div>
+
+      <!-- Spectrum Info Inside Sheet -->
+      <div class="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+        <div class="text-xs font-bold text-white flex items-center justify-between">
+          <span>Refractive Index</span>
+          <span class="text-[10px] text-cyan-400 font-mono">1.520</span>
+        </div>
+        <p class="text-[11px] text-slate-400 leading-normal">
+          Light rays bend according to Snell's law creating prismatic iridescence across view angles.
+        </p>
+      </div>
+    </div>
+
+    <!-- Mobile Footer Info -->
+    <div class="pt-6 border-t border-white/10 space-y-3">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-fuchsia-500 to-cyan-400 p-[1px]">
+          <div class="w-full h-full bg-slate-900 rounded-full flex items-center justify-center font-bold text-xs text-white">
+            B
+          </div>
+        </div>
+        <div class="overflow-hidden">
+          <div class="text-xs font-bold text-white whitespace-nowrap">Bahaa Mohammed</div>
+          <div class="text-[10px] text-slate-400 whitespace-nowrap">Full-Stack Engineer</div>
+        </div>
+      </div>
+      <button id="mobileSheetCopyBtn" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-fuchsia-500 to-cyan-500 text-center text-xs font-bold text-white active:scale-95 transition-all">
+        Connect: bahaam.coding@gmail.com
+      </button>
+    </div>
+  </aside>
+
+  <!-- FOOTER -->
+  <footer class="w-full max-w-[800px] mx-auto flex items-center justify-between text-xs text-slate-400 py-3 border-t border-white/10">
+    <div class="flex items-center gap-2 whitespace-nowrap">
+      <span>Crafted by</span>
+      <a href="https://github.com/IBahaaaldin" target="_blank" class="font-bold text-white hover:text-cyan-300 transition-colors whitespace-nowrap">Bahaa Mohammed</a>
+    </div>
+    <div class="flex items-center gap-4 text-xs">
+      <a href="https://www.instagram.com/ibahaaaldincoding" target="_blank" class="hover:text-cyan-300 transition-colors whitespace-nowrap">@ibahaaaldincoding</a>
+      <span class="hidden sm:inline">•</span>
+      <span class="hidden sm:inline font-mono">Ready-UIs #12</span>
+    </div>
+  </footer>
+
+  <script>
+    // --- 3D Tilt & Chromatic Angle Calculation ---
+    const prismNav = document.getElementById('prismNavbar');
+
+    if (prismNav) {
+      window.addEventListener('mousemove', (e) => {
+        const rect = prismNav.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const deltaX = e.clientX - centerX;
+        const deltaY = e.clientY - centerY;
+
+        // Angle for chromatic conic gradient
+        const rad = Math.atan2(deltaY, deltaX);
+        const deg = rad * (180 / Math.PI) + 90;
+        prismNav.style.setProperty('--angle', `${deg}deg`);
+
+        // 3D Perspective Tilt (Subtle)
+        const rotY = (deltaX / (window.innerWidth / 2)) * 6;
+        const rotX = -(deltaY / (window.innerHeight / 2)) * 6;
+        prismNav.style.transform = `rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg) translateZ(6px)`;
+      });
+
+      prismNav.addEventListener('mouseleave', () => {
+        prismNav.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0px)';
+      });
+    }
+
+    // --- Tab Indicator Sliding Pill ---
+    const tabContainer = document.getElementById('tabContainer');
+    const tabPill = document.getElementById('tabPill');
+    const tabButtons = document.querySelectorAll('.prism-tab-btn');
+
+    function updatePillPosition(activeBtn) {
+      if (!activeBtn || !tabPill || !tabContainer) return;
+      const containerRect = tabContainer.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      const left = btnRect.left - containerRect.left;
+      const width = btnRect.width;
+
+      tabPill.style.transform = `translateX(${left}px)`;
+      tabPill.style.width = `${width}px`;
+
+      tabButtons.forEach(btn => {
+        if (btn === activeBtn) {
+          btn.classList.add('text-cyan-300');
+          btn.classList.remove('text-slate-400');
+        } else {
+          btn.classList.remove('text-cyan-300');
+          btn.classList.add('text-slate-400');
+        }
+      });
+    }
+
+    const initialActive = tabButtons[0];
+    if (initialActive) {
+      setTimeout(() => updatePillPosition(initialActive), 50);
+    }
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        updatePillPosition(btn);
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      const active = document.querySelector('.prism-tab-btn.text-cyan-300') || tabButtons[0];
+      if (active) updatePillPosition(active);
+    });
+
+    // --- Spectrum Tuner Popover ---
+    const spectrumPanelToggle = document.getElementById('spectrumPanelToggle');
+    const spectrumPopover = document.getElementById('spectrumPopover');
+    const waveSlider = document.getElementById('waveSlider');
+    const waveVal = document.getElementById('waveVal');
+
+    if (spectrumPanelToggle && spectrumPopover) {
+      spectrumPanelToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        spectrumPopover.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!spectrumPopover.contains(e.target) && e.target !== spectrumPanelToggle) {
+          spectrumPopover.classList.add('hidden');
+        }
+      });
+    }
+
+    if (waveSlider && waveVal) {
+      waveSlider.addEventListener('input', (e) => {
+        waveVal.textContent = `${e.target.value}nm`;
+      });
+    }
+
+    // --- Theme Toggle ---
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+        setTimeout(() => {
+          const active = document.querySelector('.prism-tab-btn.text-cyan-300') || tabButtons[0];
+          if (active) updatePillPosition(active);
+        }, 80);
+      });
+    }
+
+    // --- Connect / Copy Email ---
+    const copyEmailBtn = document.getElementById('copyEmailBtn');
+    const copyIcon = document.getElementById('copyIcon');
+    const checkIcon = document.getElementById('checkIcon');
+    const copyBtnText = document.getElementById('copyBtnText');
+
+    function triggerCopy(btn, textEl) {
+      navigator.clipboard?.writeText('bahaam.coding@gmail.com');
+      if (copyIcon) copyIcon.classList.add('hidden');
+      if (checkIcon) checkIcon.classList.remove('hidden');
+      if (textEl) textEl.textContent = 'Copied! ✨';
+
+      setTimeout(() => {
+        if (copyIcon) copyIcon.classList.remove('hidden');
+        if (checkIcon) checkIcon.classList.add('hidden');
+        if (textEl) textEl.textContent = 'Connect';
+      }, 2200);
+    }
+
+    if (copyEmailBtn) {
+      copyEmailBtn.addEventListener('click', () => triggerCopy(copyEmailBtn, copyBtnText));
+    }
+
+    const mobileCopyBtn = document.getElementById('mobileCopyBtn');
+    if (mobileCopyBtn) {
+      mobileCopyBtn.addEventListener('click', () => {
+        navigator.clipboard?.writeText('bahaam.coding@gmail.com');
+        mobileCopyBtn.textContent = 'Copied! ✨';
+        setTimeout(() => mobileCopyBtn.textContent = 'Connect', 2200);
+      });
+    }
+
+    const mobileSheetCopyBtn = document.getElementById('mobileSheetCopyBtn');
+    if (mobileSheetCopyBtn) {
+      mobileSheetCopyBtn.addEventListener('click', () => {
+        navigator.clipboard?.writeText('bahaam.coding@gmail.com');
+        mobileSheetCopyBtn.textContent = 'Email Copied! ✨';
+        setTimeout(() => mobileSheetCopyBtn.textContent = 'Connect: bahaam.coding@gmail.com', 2200);
+      });
+    }
+
+    // --- Mobile Sidebar Sheet Drawer ---
+    const mobileMenuOpenBtn = document.getElementById('mobileMenuOpenBtn');
+    const mobileMenuCloseBtn = document.getElementById('mobileMenuCloseBtn');
+    const mobileSidebar = document.getElementById('mobileSidebar');
+    const mobileBackdrop = document.getElementById('mobileBackdrop');
+
+    function openMobileMenu() {
+      mobileSidebar.classList.remove('translate-x-full');
+      mobileBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+    }
+
+    function closeMobileMenu() {
+      mobileSidebar.classList.add('translate-x-full');
+      mobileBackdrop.classList.add('opacity-0', 'pointer-events-none');
+    }
+
+    if (mobileMenuOpenBtn) mobileMenuOpenBtn.addEventListener('click', openMobileMenu);
+    if (mobileMenuCloseBtn) mobileMenuCloseBtn.addEventListener('click', closeMobileMenu);
+    if (mobileBackdrop) mobileBackdrop.addEventListener('click', closeMobileMenu);
+
+    document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.mobile-tab-btn').forEach(b => {
+          b.classList.remove('bg-gradient-to-r', 'from-fuchsia-500/20', 'to-cyan-500/20', 'border-white/20', 'text-cyan-300', 'font-bold');
+          b.classList.add('bg-white/5', 'border-white/10', 'text-slate-300');
+        });
+        btn.classList.add('bg-gradient-to-r', 'from-fuchsia-500/20', 'to-cyan-500/20', 'border-white/20', 'text-cyan-300', 'font-bold');
+        btn.classList.remove('bg-white/5', 'border-white/10', 'text-slate-300');
+      });
+    });
+  </script>
+</body>
+</html>
